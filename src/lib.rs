@@ -504,7 +504,7 @@ impl Extension for ApolloTracingExtension {
             ..Default::default()
         };
         let node = Arc::new(RwLock::new(node));
-        self.nodes.write().await.insert(path, node.clone());
+        self.nodes.write().await.insert(path, node().clone());
         let parent_node = path_node.parent.map(|x| x.to_string_vec().join("."));
         // Use the path to create a new node
         // https://github.com/apollographql/apollo-server/blob/291c17e255122d4733b23177500188d68fac55ce/packages/apollo-server-core/src/plugin/traceTreeBuilder.ts
@@ -529,7 +529,7 @@ impl Extension for ApolloTracingExtension {
                     Err(e) => serde_json::json!({ "error": format!("{:?}", e) }).to_string(),
                 };
                 error.set_json(json);
-                node.write()
+                node().write()
                     .await
                     .set_error(RepeatedField::from_vec(vec![error]));
                 Err(e)
@@ -537,7 +537,7 @@ impl Extension for ApolloTracingExtension {
         };
         let end_time = Utc::now() - self.inner.lock().await.start_time;
 
-        node.write().await.set_end_time(
+        node().write().await.set_end_time(
             match end_time
                 .num_nanoseconds()
                 .and_then(|x| u64::try_from(x).ok())
